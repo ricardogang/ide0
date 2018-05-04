@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+    #editor { 
+        padding: 5px ;
+        border-radius: 7px;
+    }
+    
+    #result { 
+    	padding:5px; 
+    	border-radius: 7px; 
+    	min-width:650px;
+    	min-height:100px;
+        color: #C2C5C5; 
+        background-color: #333333;
+        wrap: off;
+	}
+    
+    button {
+		border-radius: 7px; 
+        width: 100px ;
+        padding:5px; 
+	}	
+</style>
+</head>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.3.3/ace.js" type="text/javascript" charset="utf-8">
+</script>
+
+
+<body>
+<button id="runBtn" onCLick="run(editor)">RUN</button>
+<br>
+<div id="editor" style="height: 300px; width: 75% " align="center">
+public class Main {
+	public static void main (String args[]) {
+   		System.out.println("hey!") ; 
+	}
+}
+</div>
+<br>
+<textarea id="result"></textarea>
+
+<script>
+function run(editor) {
+    var source=editor.getValue();
+	sendCode("source_code="+source+"&language_id="+27+"&base64_encoded=false&wait=false")
+};
+
+function sendCode(msg) {
+	var xmlhttp=new XMLHttpRequest();
+	xmlhttp.onreadystatechange=function() {
+        if (xmlhttp.readyState==4 && (xmlhttp.status>=200)&&(xmlhttp.status<300)){
+            if (xmlhttp.responseText.length>0) {
+                updateConsole(JSON.parse(xmlhttp.response).token) ;
+            }
+        }
+    }
+    xmlhttp.open("POST","https://api.judge0.com/submissions",true);
+    xmlhttp.setRequestHeader("Content-type","application/x-www-form-urlencoded");
+    xmlhttp.send(msg);
+};
+
+function updateConsole(token) {
+document.getElementById("result").value= token ;
+    $.get("https://api.judge0.com/submissions/"+token+"?							base64_encoded=false&fields=stdout,stderr,status_id,language_id,compile_output", function(response) {
+  	console.log(response);
+});
+
+$.get('https://api.judge0.com/submissions/7bb2847d-f34b-4faf-96ab-20b7f521ee5c?base64_encoded=false&fields=stdout,stderr,status_id,language_id,compile_output', function(response) {
+  console.log(response);
+});
+
+}
+
+ var timer ;
+    var editor = ace.edit("editor");
+    editor.getSession().setMode("ace/mode/java");
+    var delta=""  ;
+    var deltaType="";
+    editor.getSession().on('change', function(event) {
+        delta+=event.data.text ;
+        if (deltaType!=event.data.action){
+            deltaType= event.data.action ;
+            console.log("cambio: 0:"+event.data.action+" 1:"+event.data.range+" 2:"+event.data.text+" delta:"+delta+" deltaType:"+deltaType);
+            //delta="" ;
+        }
+        
+        clearTimeout(timer);
+        timer = setTimeout(function(){
+            console.log("cambio: 0:"+event.data.action+" 1:"+event.data.range+" 2:"+event.data.text+" delta:"+delta+" deltaType:"+deltaType);
+            delta="";
+        },2000);
+    
+    });
+    editor.getSession().setUseSoftTabs(true);
+</script>
+</body>
+</html>
